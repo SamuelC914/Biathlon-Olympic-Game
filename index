@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Biathlon Arcade – Stable</title>
+
+<style>
+body {
+    margin: 0;
+    background: #ffffff;
+    font-family: Arial, sans-serif;
+    position: relative;
+    overflow: hidden;
+}
+
+/* IMAGE DE FOND TRANSPARENTE */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+
+    background-image: url("eric-perrot-photo-agence-zoom-kevin-voigt.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    opacity: 0.25;           /* 👈 transparence */
+    z-index: -1;             /* 👈 derrière tout */
+    pointer-events: none;    /* 👈 aucune interaction */
+}
+
+#left, #right {
+    width: 260px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+#center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+canvas {
+    background: white;
+    margin-top: 10px;
+}
+#shooting-panel {
+    width: 100%;
+    background: #ffffff;
+    padding: 10px;
+    box-sizing: border-box;
+    min-height: 160px;
+}
+.shooting-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.targets span {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #000000;
+    margin-left: 6px;
+}
+.hit { background: black; }
+.ranking-row { margin-bottom: 6px; }
+
+#app {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+
+    position: relative;
+    z-index: 1;   /* 👈 au-dessus du fond */
+}
+#left-panel {
+    width: 220px;
+}
+
+#center-panel {
+    width: 900px;
+}
+
+#right-panel {
+    width: 260px;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div id="app">
+
+    <div id="left">
+        <h3>HUD</h3>
+        <p id="hud">Initialisation…</p>
+        <p>= / - : vitesse</p>
+        <p>0 : normal</p>
+        <p>Espace : pause</p>
+    </div>
+
+    <div id="center">
+        <canvas id="track" width="800" height="400"></canvas>
+        <div id="shooting-panel"></div>
+    </div>
+
+    <div id="right">
+        <h3>Classement</h3>
+        <div id="ranking"></div>
+    </div>
+
+</div>
+
+<script>
+console.log("Script chargé");
+
+// =====================
+// RÉFÉRENCES SÛRES
+// =====================
+const hud = document.getElementById("hud");
+const canvas = document.getElementById("track");
+if (!canvas) {
+    hud.textContent = "ERREUR : canvas manquant";
+    throw new Error("Canvas manquant");
+}
+const ctx = canvas.getContext("2d");
+
+// =====================
+// PISTE
+// =====================
+const CENTER = { x: 400, y: 200 };
+const A = 320;
+const B = 140;
+
+// =====================
+// DONNÉES COUREURS
+// =====================
+const TIME_FACTOR = 0.1;
+
+const runners = [
+    { name: "Coureur 1", t0: 0, s1in: 440,s1result:4, s1time:500, s1out: 520, s2in: 899, s2result: 3, s2time: 919, s2out: 940, color: "#e74c3c" },
+    { name: "Coureur 2", t0: 0, s1in: 446,s1result:4, s1time:466, s1out: 466, s2in: 914, s2result: 3, s2time: 934, s2out: 942, color: "#3498db" },
+    { name: "Coureur 3", t0: 0, s1in: 449,s1result:4, s1time:470, s1out: 470, s2in: 911, s2result: 3, s2time: 933, s2out: 944, color: "#2ecc71" },
+    { name: "Coureur 4", t0: 0, s1in: 440,s1result:4, s1time:459, s1out: 459, s2in: 899, s2result: 3, s2time: 919, s2out: 948, color: "#e74c3c" },
+    { name: "Coureur 5", t0: 0, s1in: 446,s1result:4, s1time:466, s1out: 466, s2in: 914, s2result: 3, s2time: 934, s2out: 952, color: "#3498db" },
+    { name: "Coureur 6", t0: 0, s1in: 449,s1result:4, s1time:470, s1out: 470, s2in: 911, s2result: 3, s2time: 933, s2out: 956, color: "#2ecc71" },
+    { name: "Coureur 7", t0: 0, s1in: 440,s1result:4, s1time:459, s1out: 459, s2in: 899, s2result: 3, s2time: 919, s2out: 943, color: "#e74c3c" },
+    { name: "Coureur 8", t0: 0, s1in: 446,s1result:4, s1time:466, s1out: 466, s2in: 914, s2result: 3, s2time: 934, s2out: 942, color: "#3498db" },
+    { name: "Coureur 9", t0: 0, s1in: 449,s1result:4, s1time:470, s1out: 470, s2in: 911, s2result: 3, s2time: 933, s2out: 945, color: "#2ecc71" }
+];
+
+// Appliquer le facteur de normalisation temporelle
+runners.forEach(r => {
+    r.t0 *= TIME_FACTOR;
+    r.s1in *= TIME_FACTOR;
+    r.s1time *= TIME_FACTOR;
+    r.s1out *= TIME_FACTOR;
+    r.s2in *= TIME_FACTOR;
+    r.s2time *= TIME_FACTOR;
+    r.s2out *= TIME_FACTOR;
+    r.state = "RUNNING";
+});
+
+runners.forEach(r => {
+    r.s1Done = false;
+    r.s2Done = false;
+});
+
+runners.forEach(r => {
+    r.times = {}; // { S1: { in: null, out: null }, S2: { in: null, out: null } }
+});
+
+// =====================
+// TEMPS
+// =====================
+let raceTime = 0;
+let timeScale = 1;
+let paused = false;
+let lastTime = performance.now();
+
+// =====================
+// PAS DE TIR
+// =====================
+const shooting = [];
+const TARGET_LIFETIME = 10;
+
+// =====================
+// INPUT
+// =====================
+document.addEventListener("keydown", e => {
+    if (e.key === "=" || e.key === "+") timeScale = Math.min(50, timeScale + 2);
+    if (e.key === "-") timeScale = Math.max(0.1, timeScale - 0.5);
+    if (e.key === "0") timeScale = 1;
+    if (e.code === "Space") paused = !paused;
+});
+
+// =====================
+// BOUCLE
+// =====================
+function loop(now) {
+    const realDt = (now - lastTime) / 1000;
+    lastTime = now;
+
+    if (!paused) raceTime += realDt * timeScale;
+
+    update(realDt * timeScale);
+    render();
+
+    requestAnimationFrame(loop);
+}
+
+// =====================
+// GENERER TIR
+// =====================
+
+function generateTargets(result) {
+    const arr = [];
+    for (let i = 0; i < result; i++) arr.push("hit");
+    for (let i = result; i < 5; i++) arr.push("miss");
+
+    // shuffle
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+// =====================
+// UPDATE
+// =====================
+function update(dt) {
+    runners.forEach(r => {
+        // Si le coureur n'est pas encore parti, ne fait rien
+        if (raceTime < r.t0) return;
+
+        // Temps relatif depuis le départ du coureur
+        const localTime = raceTime - r.t0;
+        // S1
+        if (!r.s1Done && localTime >= r.s1in) {
+            shooting.push({
+                runner: r,
+                shots: 0,
+                timer: 0,
+                end: r.s1out,
+                post: 0,
+                label: "S1",
+                targets: generateTargets(r.s1result)
+            });
+            r.s1Done = true;
+            r.times.S1 = { in: localTime.toFixed(1), out: null };
+        }
+
+        if (r.s1Done && r.times.S1 && r.times.S1.out === null && localTime >= r.s1out) {
+            r.times.S1.out = localTime.toFixed(1);
+        }
+
+        // --- Gestion S2 ---
+        if (!r.s2Done && localTime >= r.s2in) {
+            shooting.push({
+                runner: r,
+                shots: 0,
+                timer: 0,
+                end: r.s2out,
+                post: 0,
+                label: "S2",
+                targets: generateTargets(r.s2result)
+            });
+            r.s2Done = true;
+            r.times.S2 = { in: localTime.toFixed(1), out: null };
+        }
+
+        if (r.s2Done && r.times.S2 && r.times.S2.out === null && localTime >= r.s2out) {
+            r.times.S2.out = localTime.toFixed(1);
+        }
+    });
+
+    // Mise à jour des animations de tir
+    shooting.forEach(anim => {
+
+        // temps de début du tir selon S1 ou S2
+        const startTime = (anim.label === "S1")
+            ? anim.runner.s1in
+            : anim.runner.s2in;
+
+        const endShootTime = (anim.label === "S1")
+            ? anim.runner.s1time
+            : anim.runner.s2time;
+
+        const duration = endShootTime - startTime;
+
+        if (raceTime <= endShootTime) {
+
+            // avance le timer
+            anim.timer += dt;
+
+            // progression normalisée du tir (0 → 1)
+            const progress = Math.min(anim.timer / duration, 1);
+
+            // nombre de cibles révélées (0 → 5)
+            anim.shots = Math.floor(progress * 5);
+
+            // sécurité
+            anim.shots = Math.min(anim.shots, 5);
+
+        } else {
+            // temps d'affichage après le tir
+            anim.post += dt;
+            anim.shots = 5; // garantit que toutes les cibles sont révélées
+        }
+    });
+}
+
+// =====================
+// RENDER
+// =====================
+function render() {
+    // HUD TOUJOURS EN PREMIER
+    const realRaceTime = raceTime / TIME_FACTOR; // convertit le temps compressé en temps réel
+    hud.textContent =
+        `Temps : ${realRaceTime.toFixed(1)} s | Vitesse : ${paused ? "PAUSE" : "x" + timeScale.toFixed(1)}`;
+
+
+    // CANVAS
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#bbb";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(CENTER.x, CENTER.y, A, B, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    runners.forEach(r => {
+
+        // Ne dessine pas si coureur pas encore parti
+        if (raceTime < r.t0) return;
+
+        const localTime = raceTime - r.t0;
+        const TWO_PI = Math.PI * 2;
+
+        let angle = 0;
+
+        // Avant S1 in
+        if (localTime < r.s1in) angle = (localTime / r.s1in) * TWO_PI;
+
+        // Tir S1
+        else if (localTime >= r.s1in && localTime < r.s1out) angle = TWO_PI;
+
+        // Tronçon S1→S2
+        else if (localTime >= r.s1out && localTime < r.s2in) {
+            angle = TWO_PI + ((localTime - r.s1out) / (r.s2in - r.s1out)) * TWO_PI;
+        }
+
+        // Tir S2
+        else if (localTime >= r.s2in && localTime < r.s2out) angle = TWO_PI * 2;
+
+        // Après S2
+        else if (localTime >= r.s2out && r.finish) {
+            angle = TWO_PI * 2 + ((localTime - r.s2out) / (r.finish - r.s2out)) * TWO_PI;
+        }
+
+        // Disparaît après S2 out
+        if (localTime > r.s2out) return;
+
+        const x = CENTER.x + A * Math.cos(angle);
+        const y = CENTER.y + B * Math.sin(angle);
+
+        ctx.fillStyle = r.color;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, TWO_PI);
+        ctx.fill();
+    });
+
+
+    // PAS DE TIR
+    const panel = document.getElementById("shooting-panel");
+    panel.innerHTML = "<h4>Pas de tir</h4>";
+    shooting.filter(s => s.post < TARGET_LIFETIME).forEach(s => {
+        const row = document.createElement("div");
+        row.className = "shooting-row";
+        row.style.color = s.runner.color;
+        row.textContent = `${s.runner.name} (${s.label})`;
+
+        const targets = document.createElement("div");
+        targets.className = "targets";
+
+        for (let i = 0; i < 5; i++) {
+            const t = document.createElement("span");
+
+            if (i < s.shots) {
+                if (s.targets[i] === "hit") {
+                    t.style.background = "white";   // cible touchée
+                } else {
+                    t.style.background = "red";     // cible ratée 🔴
+                }
+            } else {
+                t.style.background = "black";       // pas encore tirée
+            }
+
+            targets.appendChild(t);
+        }
+
+    row.appendChild(targets);
+    panel.appendChild(row);
+});
+
+
+    // CLASSEMENT
+    const ranking = document.getElementById("ranking");
+    ranking.innerHTML = "";
+
+    [...runners]
+        .sort((a, b) => {
+            // Tri par temps de sortie du dernier tir ou temps courant
+            const ta = (a.times.S2 && a.times.S2.out) ? a.times.S2.out
+                    : (a.times.S1 && a.times.S1.out) ? a.times.S1.out
+                    : raceTime;
+            const tb = (b.times.S2 && b.times.S2.out) ? b.times.S2.out
+                    : (b.times.S1 && b.times.S1.out) ? b.times.S1.out
+                    : raceTime;
+            return ta - tb;
+        })
+        .forEach((r, i) => {
+            const div = document.createElement("div");
+            div.className = "ranking-row";
+            div.style.color = r.color;
+
+            let tirText = "";
+
+            // Tir actif ou terminé, conversion en temps réel seulement si la valeur existe
+            if (r.times.S2) {
+                if (r.times.S2.out === null && r.times.S2.in != null) {
+                    tirText = `S2 in: ${(r.times.S2.in / TIME_FACTOR).toFixed(1)}`;
+                } else if (r.times.S2.out != null) {
+                    tirText = `S2 out: ${(r.times.S2.out / TIME_FACTOR).toFixed(1)}`;
+                }
+            } 
+
+            if (!tirText && r.times.S1) {
+                if (r.times.S1.out === null && r.times.S1.in != null) {
+                    tirText = `S1 in: ${(r.times.S1.in / TIME_FACTOR).toFixed(1)}`;
+                } else if (r.times.S1.out != null) {
+                    tirText = `S1 out: ${(r.times.S1.out / TIME_FACTOR).toFixed(1)}`;
+                }
+            }
+
+            div.textContent = `${i+1}. ${r.name} ${tirText ? "(" + tirText + ")" : ""}`;
+            ranking.appendChild(div);
+        });
+}
+
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
