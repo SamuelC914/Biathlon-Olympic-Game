@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Biathlon Arcade – Stable</title>
+    <title>Biathlon Arcade â€“ Stable</title>
 
     <style>
         body {
@@ -20,17 +20,17 @@
             position: fixed;
             inset: 0;
 
-            background-image: url("eric-perrot-photo-agence-zoom-kevin-voigt.jpg");
+            background-image: url("https://github.com/SamuelC914/Biathlon-Olympic-Game/blob/main/eric-perrot-photo-agence-zoom-kevin-voigt.jpg");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
 
             opacity: 0.25;
-            /* 👈 transparence */
+            /* ðŸ‘ˆ transparence */
             z-index: -1;
-            /* 👈 derrière tout */
+            /* ðŸ‘ˆ derriÃ¨re tout */
             pointer-events: none;
-            /* 👈 aucune interaction */
+            /* ðŸ‘ˆ aucune interaction */
         }
 
         #left {
@@ -72,10 +72,10 @@
             padding: 10px;
             box-sizing: border-box;
             /* max-height: 260px; */
-            /* 👈 hauteur visible */
+            /* ðŸ‘ˆ hauteur visible */
             overflow-y: auto;
             overflow-x: auto;
-            /* 👈 scroll interne */
+            /* ðŸ‘ˆ scroll interne */
             display: flex;
             flex-direction: row;
             gap: 12px;
@@ -160,19 +160,19 @@
 
     <div id="app">
 
-        <!-- HUD à gauche -->
+        <!-- HUD Ã  gauche -->
         <div id="left">
             <h3>HUD</h3>
-            <p id="hud">Initialisation…</p>
+            <p id="hud">Initialisationâ€¦</p>
             <p>= / - : vitesse</p>
             <p>+ : vitesse x 2</p>
             <p>- : vitesse / 2</p>
             <p>1 : vitesse 1</p>
-            <p>x : vitesse x²</p>
+            <p>x : vitesse xÂ²</p>
             <p>Espace : pause</p>
 
             <div id="start-list">
-                <h4>Départs</h4>
+                <h4>DÃ©parts</h4>
                 <div id="start-runners"></div>
             </div>
         </div>
@@ -210,7 +210,7 @@
 
         </div>
 
-        <!-- Pas de tir à droite -->
+        <!-- Pas de tir Ã  droite -->
         <div id="right">
             <h3>Pas de tir</h3>
             <div id="shooting-panel"></div>
@@ -220,10 +220,10 @@
 
 
     <script>
-        console.log("Script chargé");
+        console.log("Script chargÃ©");
 
         // =====================
-        // RÉFÉRENCES SÛRES
+        // RÃ‰FÃ‰RENCES SÃ›RES
         // =====================
         const hud = document.getElementById("hud");
         const canvas = document.getElementById("track");
@@ -242,7 +242,7 @@
 
         function initStartList() {
             const container = document.getElementById("start-runners");
-            container.innerHTML = ""; // sécurité
+            container.innerHTML = ""; // sÃ©curitÃ©
 
             runners
                 .slice()
@@ -260,7 +260,7 @@
         }
 
         // =====================
-        // DONNÉES COUREURS
+        // DONNÃ‰ES COUREURS
         // =====================
         const TIME_FACTOR = 1;
 
@@ -273,7 +273,7 @@
 { name: "Stidpmi Martin", t0: 59.590597234219786, s1in: 409,s1result:5, s1time:433, s1out: 433, s2in: 786, s2result: 5, s2time: 812, s2out: 813, s3in: 1165, s3result: 4, s3time: 1191, s3out: 1215, s4in: 1574, s4result: 5, s4time: 1601, s4out: 1601, finish: 1948, color: "#f821d1" },
 { name: "Lorenzo Akitsuki", t0: 12.928975947862682, s1in: 361,s1result:4, s1time:390, s1out: 412, s2in: 762, s2result: 4, s2time: 790, s2out: 813, s3in: 1165, s3result: 2, s3time: 1189, s3out: 1260, s4in: 1610, s4result: 5, s4time: 1629, s4out: 1630, finish: 1968, color: "#048f03" },
 { name: "Samuel Pinot", t0: 0.0, s1in: 342,s1result:4, s1time:368, s1out: 391, s2in: 736, s2result: 4, s2time: 769, s2out: 793, s3in: 1137, s3result: 3, s3time: 1157, s3out: 1204, s4in: 1553, s4result: 2, s4time: 1574, s4out: 1646, finish: 1973, color: "#2133d5" },
-{ name: "Khali Hochl�nder", t0: 13.296996075394643, s1in: 362,s1result:4, s1time:383, s1out: 405, s2in: 751, s2result: 5, s2time: 781, s2out: 782, s3in: 1137, s3result: 3, s3time: 1164, s3out: 1212, s4in: 1566, s4result: 3, s4time: 1585, s4out: 1633, finish: 1973, color: "#5b6fbd" },
+{ name: "Khali Hochländer", t0: 13.296996075394643, s1in: 362,s1result:4, s1time:383, s1out: 405, s2in: 751, s2result: 5, s2time: 781, s2out: 782, s3in: 1137, s3result: 3, s3time: 1164, s3out: 1212, s4in: 1566, s4result: 3, s4time: 1585, s4out: 1633, finish: 1973, color: "#5b6fbd" },
 { name: "Diego Gosso", t0: 36.10541083753742, s1in: 387,s1result:4, s1time:409, s1out: 431, s2in: 781, s2result: 3, s2time: 813, s2out: 861, s3in: 1218, s3result: 5, s3time: 1248, s3out: 1248, s4in: 1610, s4result: 5, s4time: 1635, s4out: 1636, finish: 1986, color: "#b83e81" },
 { name: "Jurgen Van Daelle", t0: 87.85527180242343, s1in: 424,s1result:5, s1time:453, s1out: 454, s2in: 793, s2result: 4, s2time: 822, s2out: 847, s3in: 1187, s3result: 3, s3time: 1215, s3out: 1263, s4in: 1606, s4result: 3, s4time: 1627, s4out: 1675, finish: 1999, color: "#6b17bd" },
 { name: "Julich Bosch", t0: 54.454546085159336, s1in: 406,s1result:2, s1time:431, s1out: 496, s2in: 849, s2result: 5, s2time: 878, s2out: 878, s3in: 1234, s3result: 5, s3time: 1252, s3out: 1252, s4in: 1610, s4result: 4, s4time: 1632, s4out: 1656, finish: 2005, color: "#287eb1" },
@@ -393,7 +393,7 @@
                 // Si le coureur n'est pas encore parti, ne fait rien
                 if (raceTime < r.t0) return;
 
-                // Temps relatif depuis le départ du coureur
+                // Temps relatif depuis le dÃ©part du coureur
                 const localTime = raceTime;// - r.t0;
                 // S1
                 if (!r.s1Done && localTime >= r.s1in) {
@@ -471,12 +471,12 @@
                 }
             });
 
-            // Mise à jour des animations de tir
+            // Mise Ã  jour des animations de tir
             shooting.forEach(anim => {
 
                 const runner = anim.runner;
 
-                // --- Temps globaux d'entrée et de fin de tir ---
+                // --- Temps globaux d'entrÃ©e et de fin de tir ---
                 function getShootTimes(runner, label) {
                     if (label === "S1") return [runner.s1in, runner.s1time];
                     if (label === "S2") return [runner.s2in, runner.s2time];
@@ -492,7 +492,7 @@
 
                 const durationLocal = Math.max(shootTime - shootIn, 0.001);
 
-                // --- Pas encore arrivé au pas de tir ---
+                // --- Pas encore arrivÃ© au pas de tir ---
                 if (raceTime < shootStartGlobal) {
                     return;
                 }
@@ -509,7 +509,7 @@
                     anim.shots = Math.min(anim.shots, 5);
 
                 } else {
-                    // --- Tir terminé ---
+                    // --- Tir terminÃ© ---
                     anim.shots = 5;
                     anim.post += dt;
                 }
@@ -521,7 +521,7 @@
         // =====================
         function render() {
             // HUD TOUJOURS EN PREMIER
-            const realRaceTime = raceTime / TIME_FACTOR; // convertit le temps compressé en temps réel
+            const realRaceTime = raceTime / TIME_FACTOR; // convertit le temps compressÃ© en temps rÃ©el
             hud.textContent =
                 `Temps : ${realRaceTime.toFixed(1)} s | Vitesse : ${paused ? "PAUSE" : "x" + timeScale.toFixed(1)}`;
 
@@ -612,12 +612,12 @@
 
                     if (i < s.shots) {
                         if (s.targets[i] === "hit") {
-                            t.style.background = "white";   // cible touchée
+                            t.style.background = "white";   // cible touchÃ©e
                         } else {
-                            t.style.background = "red";     // cible ratée 🔴
+                            t.style.background = "red";     // cible ratÃ©e ðŸ”´
                         }
                     } else {
-                        t.style.background = "black";       // pas encore tirée
+                        t.style.background = "black";       // pas encore tirÃ©e
                     }
 
                     targets.appendChild(t);
@@ -665,7 +665,7 @@
             );
 
 
-            // === FONCTION GÉNÉRIQUE ===
+            // === FONCTION GÃ‰NÃ‰RIQUE ===
             function updateRankingBlock(containerId, isEligible, getTime, getShootResult) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
@@ -707,5 +707,6 @@
     </script>
 
 </body>
+
 
 </html>
