@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Biathlon Arcade â€“ Stable</title>
+    <title>Biathlon Arcade – Stable</title>
 
     <style>
         body {
@@ -20,17 +20,17 @@
             position: fixed;
             inset: 0;
 
-            background-image: url("https://raw.githubusercontent.com/SamuelC914/Biathlon-Olympic-Game/refs/heads/main/eric-perrot-photo-agence-zoom-kevin-voigt.jpg");
+            background-image: url("eric-perrot-photo-agence-zoom-kevin-voigt.jpg");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
 
             opacity: 0.25;
-            /* ðŸ‘ˆ transparence */
+            /* 👈 transparence */
             z-index: -1;
-            /* ðŸ‘ˆ derriÃ¨re tout */
+            /* 👈 derrière tout */
             pointer-events: none;
-            /* ðŸ‘ˆ aucune interaction */
+            /* 👈 aucune interaction */
         }
 
         #left {
@@ -72,10 +72,10 @@
             padding: 10px;
             box-sizing: border-box;
             /* max-height: 260px; */
-            /* ðŸ‘ˆ hauteur visible */
+            /* 👈 hauteur visible */
             overflow-y: auto;
             overflow-x: auto;
-            /* ðŸ‘ˆ scroll interne */
+            /* 👈 scroll interne */
             display: flex;
             flex-direction: row;
             gap: 12px;
@@ -160,10 +160,10 @@
 
     <div id="app">
 
-        <!-- HUD Ã  gauche -->
+        <!-- HUD à gauche -->
         <div id="left">
             <h3>HUD</h3>
-            <p id="hud">Initialisationâ€¦</p>
+            <p id="hud">Initialisation…</p>
             <p>= / - : vitesse</p>
             <p>+ : vitesse x 2</p>
             <p>- : vitesse / 2</p>
@@ -172,7 +172,7 @@
             <p>Espace : pause</p>
 
             <div id="start-list">
-                <h4>DÃ©parts</h4>
+                <h4>Départs</h4>
                 <div id="start-runners"></div>
             </div>
         </div>
@@ -200,7 +200,7 @@
 
         </div>
 
-        <!-- Pas de tir Ã  droite -->
+        <!-- Pas de tir à droite -->
         <div id="right">
             <h3>Pas de tir</h3>
             <div id="shooting-panel"></div>
@@ -210,10 +210,10 @@
 
 
     <script>
-        console.log("Script chargÃ©");
+        console.log("Script chargé");
 
         // =====================
-        // RÃ‰FÃ‰RENCES SÃ›RES
+        // RÉFÉRENCES SÛRES
         // =====================
         const hud = document.getElementById("hud");
         const canvas = document.getElementById("track");
@@ -232,7 +232,7 @@
 
         function initStartList() {
             const container = document.getElementById("start-runners");
-            container.innerHTML = ""; // sÃ©curitÃ©
+            container.innerHTML = ""; // sécurité
 
             runners
                 .slice()
@@ -250,7 +250,7 @@
         }
 
         // =====================
-        // DONNÃ‰ES COUREURS
+        // DONNÉES COUREURS
         // =====================
         const TIME_FACTOR = 1;
 
@@ -276,7 +276,7 @@
 { name: "Samuel Pinot", t0: 540, s1in: 452,s1result:5, s1time:473, s1out: 474, s2in: 929, s2result: 4, s2time: 954, s2out: 975, finish: 1435, color: "#fc315f" },
 { name: "Peter HAZARD", t0: 570, s1in: 453,s1result:5, s1time:480, s1out: 481, s2in: 937, s2result: 3, s2time: 959, s2out: 1001, finish: 1464, color: "#dc83eb" },
 { name: "Julich Bosch", t0: 600, s1in: 463,s1result:5, s1time:494, s1out: 494, s2in: 960, s2result: 3, s2time: 978, s2out: 1020, finish: 1489, color: "#e9ab24" },
-{ name: "Khali Hochländer", t0: 630, s1in: 464,s1result:5, s1time:486, s1out: 487, s2in: 956, s2result: 5, s2time: 974, s2out: 974, finish: 1448, color: "#3db2cb" },
+{ name: "Khali Hochl�nder", t0: 630, s1in: 464,s1result:5, s1time:486, s1out: 487, s2in: 956, s2result: 5, s2time: 974, s2out: 974, finish: 1448, color: "#3db2cb" },
 { name: "Lars Elpino", t0: 660, s1in: 527,s1result:5, s1time:547, s1out: 547, s2in: 1077, s2result: 5, s2time: 1097, s2out: 1097, finish: 1632, color: "#882215" },
 
         ];
@@ -375,7 +375,7 @@
                 // Si le coureur n'est pas encore parti, ne fait rien
                 if (raceTime < r.t0) return;
 
-                // Temps relatif depuis le dÃ©part du coureur
+                // Temps relatif depuis le départ du coureur
                 const localTime = raceTime - r.t0;
                 // S1
                 if (!r.s1Done && localTime >= r.s1in) {
@@ -416,19 +416,19 @@
                 }
             });
 
-            // Mise Ã  jour des animations de tir
+            // Mise à jour des animations de tir
             shooting.forEach(anim => {
 
                 const runner = anim.runner;
 
-                // --- Temps globaux d'entrÃ©e et de fin de tir ---
+                // --- Temps globaux d'entrée et de fin de tir ---
                 const shootStartGlobal =
                     runner.t0 + (anim.label === "S1" ? runner.s1in : runner.s2in);
 
                 const shootEndGlobal =
                     runner.t0 + (anim.label === "S1" ? runner.s1time : runner.s2time);
 
-                // --- DurÃ©e locale du tir (SANS t0) ---
+                // --- Durée locale du tir (SANS t0) ---
                 const durationLocal = Math.max(
                     (anim.label === "S1"
                         ? runner.s1time - runner.s1in
@@ -436,7 +436,7 @@
                     0.001
                 );
 
-                // --- Pas encore arrivÃ© au pas de tir ---
+                // --- Pas encore arrivé au pas de tir ---
                 if (raceTime < shootStartGlobal) {
                     return;
                 }
@@ -453,7 +453,7 @@
                     anim.shots = Math.min(anim.shots, 5);
 
                 } else {
-                    // --- Tir terminÃ© ---
+                    // --- Tir terminé ---
                     anim.shots = 5;
                     anim.post += dt;
                 }
@@ -465,7 +465,7 @@
         // =====================
         function render() {
             // HUD TOUJOURS EN PREMIER
-            const realRaceTime = raceTime / TIME_FACTOR; // convertit le temps compressÃ© en temps rÃ©el
+            const realRaceTime = raceTime / TIME_FACTOR; // convertit le temps compressé en temps réel
             hud.textContent =
                 `Temps : ${realRaceTime.toFixed(1)} s | Vitesse : ${paused ? "PAUSE" : "x" + timeScale.toFixed(1)}`;
 
@@ -494,7 +494,7 @@
                 // Tir S1
                 else if (localTime >= r.s1in && localTime < r.s1out) angle = TWO_PI;
 
-                // TronÃ§on S1â†’S2
+                // Tronçon S1→S2
                 else if (localTime >= r.s1out && localTime < r.s2in) {
                     angle = TWO_PI + ((localTime - r.s1out) / (r.s2in - r.s1out)) * TWO_PI;
                 }
@@ -502,12 +502,12 @@
                 // Tir S2
                 else if (localTime >= r.s2in && localTime < r.s2out) angle = TWO_PI * 2;
 
-                // TronÃ§on S2â†’S3
+                // Tronçon S2→S3
                 else if (localTime >= r.s2out && localTime < r.finish) {
                     angle = TWO_PI * 2 + ((localTime - r.s2out) / (r.finish - r.s2out)) * TWO_PI;
                 }
 
-                // DisparaÃ®t aprÃ¨s S2 out
+                // Disparaît après S2 out
                 if (localTime > r.finish) return;
 
                 const x = CENTER.x + A * Math.cos(angle);
@@ -537,12 +537,12 @@
 
                     if (i < s.shots) {
                         if (s.targets[i] === "hit") {
-                            t.style.background = "white";   // cible touchÃ©e
+                            t.style.background = "white";   // cible touchée
                         } else {
-                            t.style.background = "red";     // cible ratÃ©e ðŸ”´
+                            t.style.background = "red";     // cible ratée 🔴
                         }
                     } else {
-                        t.style.background = "black";       // pas encore tirÃ©e
+                        t.style.background = "black";       // pas encore tirée
                     }
 
                     targets.appendChild(t);
@@ -576,7 +576,7 @@
             );
 
 
-            // === FONCTION GÃ‰NÃ‰RIQUE ===
+            // === FONCTION GÉNÉRIQUE ===
             function updateRankingBlock(containerId, isEligible, getTime, getShootResult) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
@@ -619,6 +619,4 @@
 
 </body>
 
-
 </html>
-
