@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Biathlon Arcade – Stable</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #ffffff;
+            font-family: Arial, sans-serif;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        /* IMAGE DE FOND TRANSPARENTE */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+
+            background-image: url("https://raw.githubusercontent.com/SamuelC914/Biathlon-Olympic-Game/refs/heads/main/eric-perrot-photo-agence-zoom-kevin-voigt.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+
+            opacity: 0.25;
+            /* 👈 transparence */
+            z-index: -1;
+            /* 👈 derrière tout */
+            pointer-events: none;
+            /* 👈 aucune interaction */
+        }
+
+        #left {
+            width: 180px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #start-list {
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        .start-row {
+            margin-bottom: 4px;
+        }
+
+        #right {
+            width: 350px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            /* max-height: 95vh; */
+        }
+
+        /* Classement sous la piste */
+        #ranking-panel {
+            width: 800px;
+            background: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+            /* max-height: 260px; */
+            /* 👈 hauteur visible */
+            overflow-y: auto;
+            overflow-x: auto;
+            /* 👈 scroll interne */
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+        }
+
+        /* Une colonne de classement */
+        .ranking-column {
+            flex: 1;
+            border: 1px solid #ccc;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        /* Lignes de classement */
+        .ranking-row {
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        canvas {
+            background: white;
+            margin-top: 10px;
+        }
+
+        #shooting-panel {
+            width: 100%;
+            background: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+            min-height: 160px;
+        }
+
+        .shooting-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .targets span {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #000000;
+            margin-left: 6px;
+        }
+
+        .hit {
+            background: black;
+        }
+
+        .ranking-row {
+            margin-bottom: 6px;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #left-panel {
+            width: 220px;
+        }
+
+        #center-panel {
+            width: 900px;
+        }
+
+        #right-panel {
+            width: 260px;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div id="app">
+
+        <!-- HUD à gauche -->
+        <div id="left">
+            <h3>HUD</h3>
+            <p id="hud">Initialisation…</p>
+            <p>= / - : vitesse</p>
+            <p>+ : vitesse x 2</p>
+            <p>- : vitesse / 2</p>
+            <p>1 : vitesse 1</p>
+            <p>x : vitesse x²</p>
+            <p>Espace : pause</p>
+
+            <div id="start-list">
+                <h4>Départs</h4>
+                <div id="start-runners"></div>
+            </div>
+        </div>
+
+        <!-- Centre : piste + classement -->
+        <div id="center">
+            <canvas id="track" width="800" height="400"></canvas>
+
+            <div id="ranking-panel">
+                <div class="ranking-column">
+                    <h3>S1</h3>
+                    <div id="ranking-s1"></div>
+                </div>
+
+                <div class="ranking-column">
+                    <h3>S2</h3>
+                    <div id="ranking-s2"></div>
+                </div>
+
+                <div class="ranking-column">
+                    <h3>S3</h3>
+                    <div id="ranking-s3"></div>
+                </div>
+
+                <div class="ranking-column">
+                    <h3>S4</h3>
+                    <div id="ranking-s4"></div>
+                </div>
+
+                <div class="ranking-column">
+                    <h3>Finish</h3>
+                    <div id="ranking-finish"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Pas de tir à droite -->
+        <div id="right">
+            <h3>Pas de tir</h3>
+            <div id="shooting-panel"></div>
+        </div>
+
+    </div>
+
+
+    <script>
+        console.log("Script chargé");
+
+        // =====================
+        // RÉFÉRENCES SÛRES
+        // =====================
+        const hud = document.getElementById("hud");
+        const canvas = document.getElementById("track");
+        if (!canvas) {
+            hud.textContent = "ERREUR : canvas manquant";
+            throw new Error("Canvas manquant");
+        }
+        const ctx = canvas.getContext("2d");
+
+        // =====================
+        // PISTE
+        // =====================
+        const CENTER = { x: 400, y: 200 };
+        const A = 320;
+        const B = 140;
+        const startList = document.getElementById("start-runners");
+
+        function initStartList() {
+            startList.innerHTML = "";
+
+            runners.forEach(r => {
+                r.showLabel = false;
+
+                const div = document.createElement("div");
+                div.className = "start-row";
+                div.textContent = `${r.name} (t0=${r.t0.toFixed(1)})`;
+                div.style.cursor = "pointer";
+                div.style.color = r.color;
+
+                div.addEventListener("click", () => {
+                    r.showLabel = !r.showLabel;
+                    div.style.fontWeight = r.showLabel ? "bold" : "normal";
+                });
+
+                startList.appendChild(div);
+            });
+        }
+
+        // =====================
+        // DONNÉES COUREURS
+        // =====================
+        const TIME_FACTOR = 1;
+
+        const runners = [
+            { name: "Matteo ninteo", t0: 0, s1in: 525,s1result:5, s1time:549, s1out: 550, s2in: 1078, s2result: 3, s2time: 1099, s2out: 1219, s3in: 1750, s3result: 5, s3time: 1768, s3out: 1768, s4in: 2307, s4result: 2, s4time: 2328, s4out: 2508, finish: 3058, color: "#e3c05a" },
+{ name: "Khali Hochl�nder", t0: 60, s1in: 516,s1result:4, s1time:542, s1out: 603, s2in: 1121, s2result: 4, s2time: 1143, s2out: 1204, s3in: 1727, s3result: 5, s3time: 1751, s3out: 1751, s4in: 2281, s4result: 4, s4time: 2300, s4out: 2361, finish: 2899, color: "#19bf4e" },
+{ name: "Thor Husvod", t0: 120, s1in: 516,s1result:2, s1time:537, s1out: 717, s2in: 1237, s2result: 4, s2time: 1255, s2out: 1316, s3in: 1838, s3result: 4, s3time: 1859, s3out: 1919, s4in: 2445, s4result: 5, s4time: 2470, s4out: 2470, finish: 3002, color: "#ea3298" },
+{ name: "Peter HAZARD", t0: 180, s1in: 520,s1result:5, s1time:543, s1out: 543, s2in: 1067, s2result: 5, s2time: 1090, s2out: 1090, s3in: 1617, s3result: 4, s3time: 1636, s3out: 1697, s4in: 2228, s4result: 5, s4time: 2252, s4out: 2253, finish: 2793, color: "#33e0b7" },
+{ name: "Sven Varkansen", t0: 240, s1in: 530,s1result:5, s1time:560, s1out: 561, s2in: 1093, s2result: 5, s2time: 1113, s2out: 1113, s3in: 1648, s3result: 5, s3time: 1669, s3out: 1670, s4in: 2209, s4result: 4, s4time: 2229, s4out: 2290, finish: 2837, color: "#18bae5" },
+{ name: "Cadelli Peltonen", t0: 300, s1in: 517,s1result:5, s1time:542, s1out: 542, s2in: 1061, s2result: 4, s2time: 1085, s2out: 1146, s3in: 1667, s3result: 3, s3time: 1687, s3out: 1808, s4in: 2334, s4result: 4, s4time: 2354, s4out: 2414, finish: 2947, color: "#d5e1f4" },
+{ name: "Jurgen Van Daelle", t0: 360, s1in: 508,s1result:4, s1time:537, s1out: 597, s2in: 1108, s2result: 2, s2time: 1130, s2out: 1311, s3in: 1825, s3result: 4, s3time: 1850, s3out: 1910, s4in: 2429, s4result: 2, s4time: 2455, s4out: 2636, finish: 3159, color: "#af7a9e" },
+{ name: "Lars Elpino", t0: 420, s1in: 564,s1result:5, s1time:582, s1out: 582, s2in: 1151, s2result: 4, s2time: 1169, s2out: 1229, s3in: 1803, s3result: 5, s3time: 1821, s3out: 1821, s4in: 2407, s4result: 5, s4time: 2425, s4out: 2425, finish: 3025, color: "#ecec89" },
+{ name: "Lorenzo Akitsuki", t0: 480, s1in: 522,s1result:5, s1time:548, s1out: 548, s2in: 1073, s2result: 5, s2time: 1092, s2out: 1093, s3in: 1621, s3result: 4, s3time: 1646, s3out: 1706, s4in: 2241, s4result: 5, s4time: 2260, s4out: 2261, finish: 2803, color: "#690d3a" },
+{ name: "Johan Vysta", t0: 540, s1in: 517,s1result:5, s1time:549, s1out: 549, s2in: 1068, s2result: 3, s2time: 1096, s2out: 1217, s3in: 1738, s3result: 5, s3time: 1760, s3out: 1760, s4in: 2285, s4result: 4, s4time: 2305, s4out: 2365, finish: 2897, color: "#21f596" },
+{ name: "Didou Fourcade", t0: 600, s1in: 536,s1result:4, s1time:560, s1out: 620, s2in: 1158, s2result: 4, s2time: 1176, s2out: 1236, s3in: 1779, s3result: 3, s3time: 1803, s3out: 1924, s4in: 2471, s4result: 3, s4time: 2491, s4out: 2611, finish: 3165, color: "#c5f22c" },
+{ name: "Martin Basquet", t0: 660, s1in: 523,s1result:5, s1time:550, s1out: 550, s2in: 1075, s2result: 4, s2time: 1095, s2out: 1155, s3in: 1682, s3result: 4, s3time: 1704, s3out: 1764, s4in: 2296, s4result: 3, s4time: 2325, s4out: 2446, finish: 2985, color: "#634333" },
+{ name: "Lorenzo Veronesi", t0: 720, s1in: 539,s1result:2, s1time:561, s1out: 741, s2in: 1282, s2result: 3, s2time: 1302, s2out: 1422, s3in: 1969, s3result: 5, s3time: 1991, s3out: 1991, s4in: 2547, s4result: 5, s4time: 2566, s4out: 2566, finish: 3131, color: "#5c5f89" },
+{ name: "El Pistolero", t0: 780, s1in: 549,s1result:4, s1time:573, s1out: 634, s2in: 1186, s2result: 4, s2time: 1209, s2out: 1269, s3in: 1826, s3result: 5, s3time: 1844, s3out: 1844, s4in: 2409, s4result: 4, s4time: 2429, s4out: 2490, finish: 3065, color: "#cbddf0" },
+{ name: "Michil Michaelov", t0: 840, s1in: 527,s1result:5, s1time:559, s1out: 559, s2in: 1090, s2result: 3, s2time: 1117, s2out: 1237, s3in: 1771, s3result: 4, s3time: 1794, s3out: 1855, s4in: 2395, s4result: 4, s4time: 2423, s4out: 2483, finish: 3034, color: "#365092" },
+{ name: "Massimiliano Agrraz", t0: 900, s1in: 543,s1result:5, s1time:563, s1out: 563, s2in: 1110, s2result: 4, s2time: 1128, s2out: 1188, s3in: 1739, s3result: 4, s3time: 1763, s3out: 1823, s4in: 2381, s4result: 2, s4time: 2399, s4out: 2579, finish: 3148, color: "#def82a" },
+{ name: "Klaus Pesonen", t0: 960, s1in: 524,s1result:3, s1time:555, s1out: 676, s2in: 1203, s2result: 4, s2time: 1230, s2out: 1291, s3in: 1824, s3result: 5, s3time: 1847, s3out: 1847, s4in: 2386, s4result: 5, s4time: 2408, s4out: 2408, finish: 2956, color: "#302787" },
+{ name: "Ab Sextiotre", t0: 1020, s1in: 543,s1result:5, s1time:577, s1out: 577, s2in: 1123, s2result: 5, s2time: 1147, s2out: 1147, s3in: 1694, s3result: 5, s3time: 1717, s3out: 1718, s4in: 2269, s4result: 5, s4time: 2292, s4out: 2293, finish: 2854, color: "#9cd930" },
+{ name: "Jan Kallstr�m", t0: 1080, s1in: 529,s1result:4, s1time:550, s1out: 611, s2in: 1144, s2result: 5, s2time: 1165, s2out: 1165, s3in: 1703, s3result: 5, s3time: 1722, s3out: 1723, s4in: 2268, s4result: 5, s4time: 2295, s4out: 2296, finish: 2850, color: "#9968a4" },
+{ name: "Heikki Petonen", t0: 1140, s1in: 539,s1result:5, s1time:563, s1out: 563, s2in: 1104, s2result: 4, s2time: 1123, s2out: 1183, s3in: 1727, s3result: 5, s3time: 1745, s3out: 1745, s4in: 2293, s4result: 5, s4time: 2311, s4out: 2312, finish: 2867, color: "#69dbb4" },
+{ name: "Joe Cavson", t0: 1200, s1in: 520,s1result:4, s1time:542, s1out: 602, s2in: 1125, s2result: 3, s2time: 1149, s2out: 1269, s3in: 1797, s3result: 5, s3time: 1824, s3out: 1824, s4in: 2363, s4result: 4, s4time: 2382, s4out: 2442, finish: 2995, color: "#39799d" },
+{ name: "Diego Gosso", t0: 1260, s1in: 528,s1result:3, s1time:556, s1out: 677, s2in: 1208, s2result: 3, s2time: 1230, s2out: 1350, s3in: 1887, s3result: 5, s3time: 1916, s3out: 1917, s4in: 2459, s4result: 4, s4time: 2480, s4out: 2541, finish: 3095, color: "#510b2f" },
+{ name: "Julich Bosch", t0: 1320, s1in: 522,s1result:3, s1time:547, s1out: 667, s2in: 1194, s2result: 4, s2time: 1215, s2out: 1276, s3in: 1807, s3result: 4, s3time: 1830, s3out: 1890, s4in: 2430, s4result: 4, s4time: 2449, s4out: 2509, finish: 3056, color: "#86c41a" },
+{ name: "Samuel Pinot", t0: 1380, s1in: 516,s1result:5, s1time:545, s1out: 545, s2in: 1064, s2result: 4, s2time: 1092, s2out: 1152, s3in: 1673, s3result: 5, s3time: 1696, s3out: 1696, s4in: 2222, s4result: 5, s4time: 2246, s4out: 2247, finish: 2780, color: "#d86b6b" },
+{ name: "Heikki Cadelmanen", t0: 1440, s1in: 557,s1result:4, s1time:580, s1out: 641, s2in: 1200, s2result: 2, s2time: 1218, s2out: 1399, s3in: 1959, s3result: 2, s3time: 1981, s3out: 2162, s4in: 2727, s4result: 4, s4time: 2745, s4out: 2805, finish: 3375, color: "#f2161e" },
+{ name: "Eli Timmstein", t0: 1500, s1in: 559,s1result:5, s1time:585, s1out: 585, s2in: 1149, s2result: 3, s2time: 1169, s2out: 1290, s3in: 1860, s3result: 5, s3time: 1878, s3out: 1878, s4in: 2456, s4result: 5, s4time: 2474, s4out: 2474, finish: 3069, color: "#1ac887" },
+{ name: "Stidpmi Martin", t0: 1560, s1in: 538,s1result:4, s1time:565, s1out: 625, s2in: 1167, s2result: 5, s2time: 1189, s2out: 1189, s3in: 1737, s3result: 4, s3time: 1764, s3out: 1825, s4in: 2383, s4result: 4, s4time: 2409, s4out: 2470, finish: 3041, color: "#5b7767" },
+{ name: "Slip Debain", t0: 1620, s1in: 522,s1result:2, s1time:547, s1out: 728, s2in: 1251, s2result: 4, s2time: 1279, s2out: 1340, s3in: 1868, s3result: 4, s3time: 1894, s3out: 1955, s4in: 2487, s4result: 2, s4time: 2512, s4out: 2693, finish: 3231, color: "#a16be0" },
+
+        ];
+        initStartList()
+        // Appliquer le facteur de normalisation temporelle
+        runners.forEach(r => {
+            r.t0 *= TIME_FACTOR;
+            r.s1in *= TIME_FACTOR;
+            r.s1time *= TIME_FACTOR;
+            r.s1out *= TIME_FACTOR;
+            r.s2in *= TIME_FACTOR;
+            r.s2time *= TIME_FACTOR;
+            r.s2out *= TIME_FACTOR;
+            r.s3in *= TIME_FACTOR;
+            r.s3time *= TIME_FACTOR;
+            r.s3out *= TIME_FACTOR;
+            r.s4in *= TIME_FACTOR;
+            r.s4time *= TIME_FACTOR;
+            r.s4out *= TIME_FACTOR;
+            r.state = "RUNNING";
+        });
+
+        runners.forEach(r => {
+            r.s1Done = false;
+            r.s2Done = false;
+            r.s3Done = false;
+            r.s4Done = false;
+        });
+
+        runners.forEach(r => {
+            r.times = {}; // { S1: { in: null, out: null }, S2: { in: null, out: null } }
+        });
+
+        // =====================
+        // TEMPS
+        // =====================
+        let raceTime = 0;
+        let timeScale = 0.5;
+        let paused = false;
+        let lastTime = performance.now();
+
+        // =====================
+        // PAS DE TIR
+        // =====================
+        const shooting = [];
+        const TARGET_LIFETIME = 10;
+
+        // =====================
+        // INPUT
+        // =====================
+        document.addEventListener("keydown", e => {
+            if (e.key === "=" || e.key === "+") timeScale = Math.min(100, timeScale * 2);
+            if (e.key === "-") timeScale = Math.max(0.1, timeScale * 0.5);
+            if (e.key === "0") timeScale = 1;
+            if (e.key === "1") timeScale = 1;
+            if (e.key === "2") timeScale = 4;
+            if (e.key === "3") timeScale = 9;
+            if (e.key === "4") timeScale = 16;
+            if (e.key === "5") timeScale = 25;
+            if (e.key === "6") timeScale = 36;
+            if (e.key === "7") timeScale = 49;
+            if (e.key === "8") timeScale = 64;
+            if (e.key === "9") timeScale = 81;
+            if (e.code === "Space") paused = !paused;
+        });
+
+        // =====================
+        // BOUCLE
+        // =====================
+        function loop(now) {
+            const realDt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            if (!paused) raceTime += realDt * timeScale;
+
+            update(realDt * timeScale);
+            render();
+
+            requestAnimationFrame(loop);
+        }
+
+        // =====================
+        // GENERER TIR
+        // =====================
+
+        function generateTargets(result) {
+            const arr = [];
+            for (let i = 0; i < result; i++) arr.push("hit");
+            for (let i = result; i < 5; i++) arr.push("miss");
+
+            // shuffle
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // =====================
+        // UPDATE
+        // =====================
+        function update(dt) {
+            runners.forEach(r => {
+                // Si le coureur n'est pas encore parti, ne fait rien
+                if (raceTime < r.t0) return;
+
+                // Temps relatif depuis le départ du coureur
+                const localTime = raceTime - r.t0;
+                // S1
+                if (!r.s1Done && localTime >= r.s1in) {
+                    shooting.push({
+                        runner: r,
+                        shots: 0,
+                        timer: 0,
+                        end: r.s1out,
+                        post: 0,
+                        label: "S1",
+                        targets: generateTargets(r.s1result)
+                    });
+                    r.s1Done = true;
+                    r.times.S1 = { in: localTime.toFixed(1), out: null };
+                }
+
+                if (r.s1Done && r.times.S1 && r.times.S1.out === null && localTime >= r.s1out) {
+                    r.times.S1.out = localTime.toFixed(1);
+                }
+
+                // --- Gestion S2 ---
+                if (!r.s2Done && localTime >= r.s2in) {
+                    shooting.push({
+                        runner: r,
+                        shots: 0,
+                        timer: 0,
+                        end: r.s2out,
+                        post: 0,
+                        label: "S2",
+                        targets: generateTargets(r.s2result)
+                    });
+                    r.s2Done = true;
+                    r.times.S2 = { in: localTime.toFixed(1), out: null };
+                }
+
+                if (r.s2Done && r.times.S2 && r.times.S2.out === null && localTime >= r.s2out) {
+                    r.times.S2.out = localTime.toFixed(1);
+                }
+                // S3
+                if (!r.s3Done && localTime >= r.s3in) {
+                    shooting.push({
+                        runner: r,
+                        shots: 0,
+                        timer: 0,
+                        end: r.s3out,
+                        post: 0,
+                        label: "S3",
+                        targets: generateTargets(r.s3result)
+                    });
+                    r.s3Done = true;
+                    r.times.S3 = { in: localTime.toFixed(1), out: null };
+                }
+
+                if (r.s3Done && r.times.S3 && r.times.S3.out === null && localTime >= r.s3out) {
+                    r.times.S3.out = localTime.toFixed(1);
+                }
+
+                // S4
+                if (!r.s4Done && localTime >= r.s4in) {
+                    shooting.push({
+                        runner: r,
+                        shots: 0,
+                        timer: 0,
+                        end: r.s4out,
+                        post: 0,
+                        label: "S4",
+                        targets: generateTargets(r.s4result)
+                    });
+                    r.s4Done = true;
+                    r.times.S4 = { in: localTime.toFixed(1), out: null };
+                }
+
+                if (r.s4Done && r.times.S4 && r.times.S4.out === null && localTime >= r.s4out) {
+                    r.times.S4.out = localTime.toFixed(1);
+                }
+            });
+
+            // Mise à jour des animations de tir
+            shooting.forEach(anim => {
+
+                const runner = anim.runner;
+
+                // --- Temps globaux d'entrée et de fin de tir ---
+                function getShootTimes(runner, label) {
+                    if (label === "S1") return [runner.s1in, runner.s1time];
+                    if (label === "S2") return [runner.s2in, runner.s2time];
+                    if (label === "S3") return [runner.s3in, runner.s3time];
+                    if (label === "S4") return [runner.s4in, runner.s4time];
+                    return [0, 0];
+                }
+
+                const [shootIn, shootTime] = getShootTimes(runner, anim.label);
+
+                const shootStartGlobal = runner.t0 + shootIn;
+                const shootEndGlobal = runner.t0 + shootTime;
+
+                const durationLocal = Math.max(shootTime - shootIn, 0.001);
+
+                // --- Pas encore arrivé au pas de tir ---
+                if (raceTime < shootStartGlobal) {
+                    return;
+                }
+
+                // --- Tir en cours ---
+                if (raceTime <= shootEndGlobal) {
+
+                    anim.timer += dt;
+
+                    const progress = Math.min(anim.timer / durationLocal, 1);
+
+                    const targetShots = Math.floor(progress * 5);
+                    anim.shots = Math.max(anim.shots, targetShots);
+                    anim.shots = Math.min(anim.shots, 5);
+
+                } else {
+                    // --- Tir terminé ---
+                    anim.shots = 5;
+                    anim.post += dt;
+                }
+            });
+        }
+
+        // =====================
+        // RENDER
+        // =====================
+        function render() {
+            // HUD TOUJOURS EN PREMIER
+            const realRaceTime = raceTime / TIME_FACTOR; // convertit le temps compressé en temps réel
+            hud.textContent =
+                `Temps : ${realRaceTime.toFixed(1)} s | Vitesse : ${paused ? "PAUSE" : "x" + timeScale.toFixed(1)}`;
+
+
+            // CANVAS
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#bbb";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(CENTER.x, CENTER.y, A, B, 0, 0, Math.PI * 2);
+            ctx.lineWidth = 30;
+            ctx.stroke();
+
+            runners.forEach(r => {
+
+                // Ne dessine pas si coureur pas encore parti
+                if (raceTime < r.t0) return;
+
+                const localTime = raceTime - r.t0;
+                const TWO_PI = Math.PI * 2;
+
+                let angle = 0;
+
+                // Avant S1 in
+                if (localTime < r.s1in) angle = (localTime / r.s1in) * TWO_PI;
+
+                // Tir S1
+                else if (localTime >= r.s1in && localTime < r.s1out) angle = TWO_PI;
+
+                // Tronçon S1→S2
+                else if (localTime >= r.s1out && localTime < r.s2in) {
+                    angle = TWO_PI + ((localTime - r.s1out) / (r.s2in - r.s1out)) * TWO_PI;
+                }
+
+                // Tir S2
+                else if (localTime >= r.s2in && localTime < r.s2out) angle = TWO_PI * 2;
+
+                // Tronçon S2→S3
+                else if (localTime >= r.s2out && localTime < r.s3in) {
+                    angle = 2 * TWO_PI * 2 + ((localTime - r.s2out) / (r.s3in - r.s2out)) * TWO_PI;
+                }
+
+                // Tir S3
+                else if (localTime >= r.s3in && localTime < r.s3out) angle = 2 * TWO_PI;
+
+                // Tronçon S3→S4
+                else if (localTime >= r.s3out && localTime < r.s4in) {
+                    angle = 3 * TWO_PI + ((localTime - r.s3out) / (r.s4in - r.s3out)) * TWO_PI;
+                }
+
+                // Tir S4
+                else if (localTime >= r.s4in && localTime < r.s4out) angle = TWO_PI * 2;
+
+                // Tronçon S4→S5
+                else if (localTime >= r.s4out && localTime < r.finish) {
+                    angle = 4 * TWO_PI * 2 + ((localTime - r.s4out) / (r.finish - r.s4out)) * TWO_PI;
+                }
+
+                // Disparaît après finish
+                if (localTime > r.finish) return;
+
+                const x = CENTER.x + A * Math.cos(angle);
+                const y = CENTER.y + B * Math.sin(angle);
+
+                ctx.fillStyle = r.color;
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, TWO_PI);
+                ctx.fill();
+                
+                if (r.showLabel) {
+                    ctx.font = "12px Arial";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+
+                    // contour pour la lisibilité
+                    ctx.strokeStyle = "white";
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(r.name, x + 10, y);
+
+                    // texte
+                    ctx.fillStyle = "black";
+                    ctx.fillText(r.name, x + 10, y);
+                }
+            });
+
+
+            // PAS DE TIR
+            const panel = document.getElementById("shooting-panel");
+            panel.innerHTML = "<h4>Pas de tir</h4>";
+            shooting.filter(s => s.post < TARGET_LIFETIME).forEach(s => {
+                const row = document.createElement("div");
+                row.className = "shooting-row";
+                row.style.color = s.runner.color;
+                row.textContent = `${s.runner.name} (${s.label})`;
+
+                const targets = document.createElement("div");
+                targets.className = "targets";
+
+                for (let i = 0; i < 5; i++) {
+                    const t = document.createElement("span");
+
+                    if (i < s.shots) {
+                        if (s.targets[i] === "hit") {
+                            t.style.background = "white";   // cible touchée
+                        } else {
+                            t.style.background = "red";     // cible ratée 🔴
+                        }
+                    } else {
+                        t.style.background = "black";       // pas encore tirée
+                    }
+
+                    targets.appendChild(t);
+                }
+
+                row.appendChild(targets);
+                panel.appendChild(row);
+            });
+
+
+            // === CLASSEMENTS MULTIPLES ===
+            updateRankingBlock(
+                "ranking-s1",
+                r => r.times.S1 && r.times.S1.out != null,
+                r => r.times.S1.out,
+                r => r.s1result
+            );
+
+            updateRankingBlock(
+                "ranking-s2",
+                r => r.times.S2 && r.times.S2.out != null,
+                r => r.times.S2.out,
+                r => r.s2result
+            );
+
+            updateRankingBlock(
+                "ranking-s3",
+                r => r.times.S3 && r.times.S3.out != null,
+                r => r.times.S3.out,
+                r => r.s3result
+            );
+
+            updateRankingBlock(
+                "ranking-s4",
+                r => r.times.S4 && r.times.S4.out != null,
+                r => r.times.S4.out,
+                r => r.s4result
+            );
+
+            updateRankingBlock(
+                "ranking-finish",
+                r => r.finish != null && raceTime >= r.t0 + r.finish,
+                r => r.finish
+            );
+
+
+            // === FONCTION GÉNÉRIQUE ===
+            function updateRankingBlock(containerId, isEligible, getTime, getShootResult) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                container.innerHTML = "";
+
+                const eligibleRunners = runners
+                    .filter(r => isEligible(r))
+                    .sort((a, b) => getTime(a) - getTime(b));
+
+                if (eligibleRunners.length === 0) return;
+
+                const leaderTime = getTime(eligibleRunners[0]);
+
+                eligibleRunners.forEach((r, index) => {
+                    const div = document.createElement("div");
+                    div.className = "ranking-row";
+                    div.style.color = r.color;
+
+                    let gapText = "";
+                    if (index > 0) {
+                        const gap = (getTime(r) - leaderTime) / TIME_FACTOR;
+                        gapText = ` +${gap.toFixed(1)}s`;
+                    }
+
+                    let shootText = "";
+                    if (typeof getShootResult === "function") {
+                        shootText = ` (${getShootResult(r)}/5)`;
+                    }
+
+                    div.textContent = `${index + 1}. ${r.name}${gapText}${shootText}`;
+                    container.appendChild(div);
+                });
+            }
+
+        }
+
+        requestAnimationFrame(loop);
+    </script>
+
+</body>
+
+</html>
