@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Biathlon Arcade – Stable</title>
+
+    <style>
+        body {
+            margin: 0;
+            background: #ffffff;
+            font-family: Arial, sans-serif;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        /* IMAGE DE FOND TRANSPARENTE */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+
+            background-image: url("https://raw.githubusercontent.com/SamuelC914/Biathlon-Olympic-Game/refs/heads/main/eric-perrot-photo-agence-zoom-kevin-voigt.jpg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+
+            opacity: 0.25;
+            /* 👈 transparence */
+            z-index: -1;
+            /* 👈 derrière tout */
+            pointer-events: none;
+            /* 👈 aucune interaction */
+        }
+
+        #left {
+            width: 180px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #start-list {
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        .start-row {
+            margin-bottom: 4px;
+        }
+
+        #right {
+            width: 350px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        #center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            /* max-height: 95vh; */
+        }
+
+        /* Classement sous la piste */
+        #ranking-panel {
+            width: 800px;
+            background: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+            /* max-height: 260px; */
+            /* 👈 hauteur visible */
+            overflow-y: auto;
+            overflow-x: auto;
+            /* 👈 scroll interne */
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+        }
+
+        /* Une colonne de classement */
+        .ranking-column {
+            flex: 1;
+            border: 1px solid #ccc;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        /* Lignes de classement */
+        .ranking-row {
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        canvas {
+            background: rgb(222, 221, 221);
+            margin-top: 10px;
+        }
+
+        #shooting-panel {
+            width: 100%;
+            background: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+            min-height: 160px;
+        }
+
+        .shooting-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .targets span {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #000000;
+            margin-left: 6px;
+        }
+
+        .hit {
+            background: black;
+        }
+
+        .ranking-row {
+            margin-bottom: 6px;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #left-panel {
+            width: 220px;
+        }
+
+        #center-panel {
+            width: 900px;
+        }
+
+        #right-panel {
+            width: 260px;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div id="app">
+
+        <!-- HUD à gauche -->
+        <div id="left">
+            <h3>HUD</h3>
+            <p id="hud">Initialisation…</p>
+            <p>= / - : vitesse</p>
+            <p>+ : vitesse x 2</p>
+            <p>- : vitesse / 2</p>
+            <p>1 : vitesse 1</p>
+            <p>x : vitesse x²</p>
+            <p>Espace : pause</p>
+
+            <div id="start-list">
+                <h4>Départs</h4>
+                <div id="start-runners"></div>
+            </div>
+        </div>
+
+        <!-- Centre : piste + classement -->
+        <div id="center">
+            <canvas id="track" width="800" height="400"></canvas>
+
+            <div id="ranking-panel">
+                <div class="ranking-column">
+                    <h3>S1</h3>
+                    <div id="ranking-s1"></div>
+                </div>
+
+                <div class="ranking-column">
+                    <h3>S2</h3>
+                    <div id="ranking-s2"></div>
+                </div>
+
+                <div class="ranking-column">
+                    <h3>Finish</h3>
+                    <div id="ranking-finish"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Pas de tir à droite -->
+        <div id="right">
+            <h3>Pas de tir</h3>
+            <div id="shooting-panel"></div>
+        </div>
+
+    </div>
+
+
+    <script>
+        console.log("Script chargé");
+
+        // =====================
+        // RÉFÉRENCES SÛRES
+        // =====================
+        const hud = document.getElementById("hud");
+        const canvas = document.getElementById("track");
+        if (!canvas) {
+            hud.textContent = "ERREUR : canvas manquant";
+            throw new Error("Canvas manquant");
+        }
+        const ctx = canvas.getContext("2d");
+
+        // =====================
+        // PISTE
+        // =====================
+        const CENTER = { x: 400, y: 200 };
+        const A = 320;
+        const B = 140;
+        const startList = document.getElementById("start-runners");
+
+        function initStartList() {
+            startList.innerHTML = "";
+
+            runners
+                .slice()
+                .sort((a, b) => a.t0 - b.t0)
+                .forEach(r => {
+                r.showLabel = false;
+
+                const div = document.createElement("div");
+                div.className = "start-row";
+                div.textContent = `${r.name} (t0=${r.t0.toFixed(1)})`;
+                div.style.cursor = "pointer";
+                div.style.color = r.color;
+
+                div.addEventListener("click", () => {
+                    r.showLabel = !r.showLabel;
+                    div.style.fontWeight = r.showLabel ? "bold" : "normal";
+                });
+
+                startList.appendChild(div);
+            });
+        }
+
+        // =====================
+        // DONNÉES COUREURS
+        // =====================
+        const TIME_FACTOR = 1;
+
+        const runners = [
+            { name: "Jane Calamitiinen", t0: 0, s1in: 191,s1result:5,s1pioche:0, s1time:213, s1out: 213, s2in: 409, s2result: 5, s2pioche: 1, s2time: 437, s2out: 438, s3in: 636, finish: 614, color: "#2beb6a" },
+{ name: "Livia Varkansen", t0: 0, s1in: 191,s1result:5,s1pioche:1, s1time:224, s1out: 224, s2in: 418, s2result: 5, s2pioche: 0, s2time: 444, s2out: 444, s3in: 641, finish: 618, color: "#62d9b3" },
+{ name: "Manon Van Daelle", t0: 0, s1in: 197,s1result:5,s1pioche:0, s1time:215, s1out: 215, s2in: 418, s2result: 5, s2pioche: 0, s2time: 442, s2out: 443, s3in: 646, finish: 629, color: "#bc4cf6" },
+{ name: "Bikini Debain", t0: 0, s1in: 197,s1result:5,s1pioche:0, s1time:223, s1out: 224, s2in: 422, s2result: 5, s2pioche: 0, s2time: 446, s2out: 447, s3in: 646, finish: 625, color: "#936b35" },
+{ name: "Magda Herrmann", t0: 0, s1in: 191,s1result:5,s1pioche:1, s1time:227, s1out: 227, s2in: 422, s2result: 5, s2pioche: 0, s2time: 454, s2out: 455, s3in: 653, finish: 631, color: "#05bb11" },
+{ name: "Peter FAULK", t0: 0, s1in: 197,s1result:5,s1pioche:1, s1time:228, s1out: 229, s2in: 430, s2result: 5, s2pioche: 0, s2time: 455, s2out: 455, s3in: 656, finish: 638, color: "#0fb609" },
+{ name: "Lisa Rosa Veronesi", t0: 0, s1in: 191,s1result:5,s1pioche:1, s1time:230, s1out: 231, s2in: 422, s2result: 5, s2pioche: 3, s2time: 466, s2out: 466, s3in: 656, finish: 631, color: "#8dd0bf" },
+
+        ];
+        initStartList()
+        // Appliquer le facteur de normalisation temporelle
+        runners.forEach(r => {
+            r.t0 *= TIME_FACTOR;
+            r.s1in *= TIME_FACTOR;
+            r.s1time *= TIME_FACTOR;
+            r.s1out *= TIME_FACTOR;
+            r.s2in *= TIME_FACTOR;
+            r.s2time *= TIME_FACTOR;
+            r.s2out *= TIME_FACTOR;
+            r.state = "RUNNING";
+        });
+
+        runners.forEach(r => {
+            r.s1Done = false;
+            r.s2Done = false;
+        });
+
+        runners.forEach(r => {
+            r.times = {}; // { S1: { in: null, out: null }, S2: { in: null, out: null } }
+        });
+
+        // =====================
+        // TEMPS
+        // =====================
+        let raceTime = 0;
+        let timeScale = 0.5;
+        let paused = false;
+        let lastTime = performance.now();
+
+        // =====================
+        // PAS DE TIR
+        // =====================
+        const shooting = [];
+        const TARGET_LIFETIME = 10;
+
+        // =====================
+        // INPUT
+        // =====================
+        document.addEventListener("keydown", e => {
+            if (e.key === "=" || e.key === "+") timeScale = Math.min(100, timeScale * 2);
+            if (e.key === "-") timeScale = Math.max(0.1, timeScale * 0.5);
+            if (e.key === "0") timeScale = 1;
+            if (e.key === "1") timeScale = 1;
+            if (e.key === "2") timeScale = 4;
+            if (e.key === "3") timeScale = 9;
+            if (e.key === "4") timeScale = 16;
+            if (e.key === "5") timeScale = 25;
+            if (e.key === "6") timeScale = 36;
+            if (e.key === "7") timeScale = 49;
+            if (e.key === "8") timeScale = 64;
+            if (e.key === "9") timeScale = 81;
+            if (e.code === "Space") paused = !paused;
+        });
+
+        // =====================
+        // BOUCLE
+        // =====================
+        function loop(now) {
+            const realDt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            if (!paused) raceTime += realDt * timeScale;
+
+            update(realDt * timeScale);
+            render();
+
+            requestAnimationFrame(loop);
+        }
+
+        // =====================
+        // GENERER TIR
+        // =====================
+
+        function generateTargets(result) {
+            const arr = [];
+            for (let i = 0; i < result; i++) arr.push("hit");
+            for (let i = result; i < 5; i++) arr.push("miss");
+
+            // shuffle
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // =====================
+        // UPDATE
+        // =====================
+        function update(dt) {
+            runners.forEach(r => {
+                // Si le coureur n'est pas encore parti, ne fait rien
+                if (raceTime < r.t0) return;
+
+                // Temps relatif depuis le départ du coureur
+                const localTime = raceTime;// - r.t0;
+                // S1
+                if (!r.s1Done && localTime >= r.s1in) {
+                    shooting.push({
+                        runner: r,
+                        shots: 0,
+                        timer: 0,
+                        end: r.s1out,
+                        post: 0,
+                        label: "S1",
+                        targets: generateTargets(r.s1result)
+                    });
+                    r.s1Done = true;
+                    r.times.S1 = { in: localTime.toFixed(1), out: null };
+                }
+
+                if (r.s1Done && r.times.S1 && r.times.S1.out === null && localTime >= r.s1out) {
+                    r.times.S1.out = localTime.toFixed(1);
+                }
+
+                // --- Gestion S2 ---
+                if (!r.s2Done && localTime >= r.s2in) {
+                    shooting.push({
+                        runner: r,
+                        shots: 0,
+                        timer: 0,
+                        end: r.s2out,
+                        post: 0,
+                        label: "S2",
+                        targets: generateTargets(r.s2result)
+                    });
+                    r.s2Done = true;
+                    r.times.S2 = { in: localTime.toFixed(1), out: null };
+                }
+
+                if (r.s2Done && r.times.S2 && r.times.S2.out === null && localTime >= r.s2out) {
+                    r.times.S2.out = localTime.toFixed(1);
+                }
+            });
+
+            // Mise à jour des animations de tir
+            shooting.forEach(anim => {
+
+                const runner = anim.runner;
+
+                // --- Temps globaux d'entrée et de fin de tir ---
+                function getShootTimes(runner, label) {
+                    if (label === "S1") return [runner.s1in, runner.s1time];
+                    if (label === "S2") return [runner.s2in, runner.s2time];
+                    return [0, 0];
+                }
+
+                const [shootIn, shootTime] = getShootTimes(runner, anim.label);
+
+                const shootStartGlobal = shootIn //+ runner.t0;
+                const shootEndGlobal = shootTime //+ runner.t0;
+
+                const durationLocal = Math.max(shootTime - shootIn, 0.001);
+
+                // --- Pas encore arrivé au pas de tir ---
+                if (raceTime < shootStartGlobal) {
+                    return;
+                }
+
+                // --- Tir en cours ---
+                if (raceTime <= shootEndGlobal) {
+
+                    anim.timer += dt;
+
+                    const progress = Math.min(anim.timer / durationLocal, 1);
+
+                    const targetShots = Math.floor(progress * 5);
+                    anim.shots = Math.max(anim.shots, targetShots);
+                    anim.shots = Math.min(anim.shots, 5);
+
+                } else {
+                    // --- Tir terminé ---
+                    anim.shots = 5;
+                    anim.post += dt;
+                }
+            });
+        }
+
+        // =====================
+        // RENDER
+        // =====================
+        function render() {
+            // HUD TOUJOURS EN PREMIER
+            const realRaceTime = raceTime / TIME_FACTOR; // convertit le temps compressé en temps réel
+            hud.textContent =
+                `Temps : ${realRaceTime.toFixed(1)} s | Vitesse : ${paused ? "PAUSE" : "x" + timeScale.toFixed(1)}`;
+
+
+            // CANVAS
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(CENTER.x, CENTER.y, A, B, 0, 0, Math.PI * 2);
+            ctx.lineWidth = 30;
+            ctx.stroke();
+
+            runners.forEach(r => {
+
+                if (raceTime < r.t0) return;
+
+                const t = raceTime;
+                const TWO_PI = Math.PI * 2;
+                let angle = 0;
+
+                // Tour 1
+                if (t < r.s1in)
+                    angle = TWO_PI * (t - r.t0) / (r.s1in - r.t0);
+
+                // Tir S1
+                else if (t < r.s1out)
+                    angle = 1 * TWO_PI;
+
+                // Tour 2
+                else if (t < r.s2in)
+                    angle = 1 * TWO_PI +
+                        ((t - r.s1out) / (r.s2in - r.s1out)) * TWO_PI;
+
+                // Tir S2
+                else if (t < r.s2out)
+                    angle = 2 * TWO_PI;
+
+                // Tour final
+                else if (t < r.finish)
+                    angle = 2 * TWO_PI +
+                        ((t - r.s2out) / (r.finish - r.s2out)) * TWO_PI;
+
+                else return;
+
+                const x = CENTER.x + A * Math.cos(angle);
+                const y = CENTER.y + B * Math.sin(angle);
+
+                ctx.fillStyle = r.color;
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, TWO_PI);
+                ctx.fill();
+
+                if (r.showLabel) {
+                    ctx.font = "12px Arial";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+
+                    // contour pour la lisibilité
+                    ctx.strokeStyle = "white";
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(r.name, x + 10, y);
+
+                    // texte
+                    ctx.fillStyle = "black";
+                    ctx.fillText(r.name, x + 10, y);
+                }
+            });
+
+
+            // PAS DE TIR
+            const panel = document.getElementById("shooting-panel");
+            panel.innerHTML = "<h4>Pas de tir</h4>";
+            shooting.filter(s => s.post < TARGET_LIFETIME).forEach(s => {
+                const row = document.createElement("div");
+                row.className = "shooting-row";
+                row.style.color = s.runner.color;
+                row.textContent = `${s.runner.name} (${s.label})`;
+
+                const targets = document.createElement("div");
+                targets.className = "targets";
+
+                for (let i = 0; i < 5; i++) {
+                    const t = document.createElement("span");
+
+                    if (i < s.shots) {
+                        if (s.targets[i] === "hit") {
+                            t.style.background = "white";   // cible touchée
+                        } else {
+                            t.style.background = "red";     // cible ratée 🔴
+                        }
+                    } else {
+                        t.style.background = "black";       // pas encore tirée
+                    }
+
+                    targets.appendChild(t);
+                }
+
+                row.appendChild(targets);
+                panel.appendChild(row);
+            });
+
+
+            // === CLASSEMENTS MULTIPLES ===
+            updateRankingBlock(
+                "ranking-s1",
+                r => r.times.S1 && r.times.S1.out != null,
+                r => r.times.S1.out,
+                r => r.s1result,
+                r => r.s1pioche
+            );
+
+            updateRankingBlock(
+                "ranking-s2",
+                r => r.times.S2 && r.times.S2.out != null,
+                r => r.times.S2.out,
+                r => r.s2result,
+                r => r.s2pioche
+            );
+
+            updateRankingBlock(
+                "ranking-finish",
+                r => r.finish != null && raceTime >= r.finish,// + r.t0,
+                r => r.finish,
+                r => r.s2result + r.s1result,
+                r => r.s2pioche + r.s1pioche
+            );
+
+
+            // === FONCTION GÉNÉRIQUE ===
+            function updateRankingBlock(containerId, isEligible, getTime, getShootResult, getPiocheNumber) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                container.innerHTML = "";
+
+                const eligibleRunners = runners
+                    .filter(r => isEligible(r))
+                    .sort((a, b) => getTime(a) - getTime(b));
+
+                if (eligibleRunners.length === 0) return;
+
+                const leaderTime = getTime(eligibleRunners[0]);
+
+                eligibleRunners.forEach((r, index) => {
+                    const div = document.createElement("div");
+                    div.className = "ranking-row";
+                    div.style.color = r.color;
+
+                    let gapText = "";
+                    if (index > 0) {
+                        const gap = (getTime(r) - leaderTime) / TIME_FACTOR;
+                        gapText = ` +${gap.toFixed(1)}s`;
+                    }
+
+                    let shootText = "";
+                    if (typeof getShootResult === "function") {
+                        shootText = ` (${getShootResult(r)}/5 + ${getPiocheNumber(r)})`;
+                    }
+
+                    div.textContent = `${index + 1}. ${r.name}${gapText}${shootText}`;
+                    container.appendChild(div);
+                });
+            }
+
+        }
+
+        requestAnimationFrame(loop);
+    </script>
+
+</body>
+
+</html>
