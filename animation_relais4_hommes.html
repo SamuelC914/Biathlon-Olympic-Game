@@ -193,16 +193,6 @@
                 </div>
 
                 <div class="ranking-column">
-                    <h3>S3</h3>
-                    <div id="ranking-s3"></div>
-                </div>
-
-                <div class="ranking-column">
-                    <h3>S4</h3>
-                    <div id="ranking-s4"></div>
-                </div>
-
-                <div class="ranking-column">
                     <h3>Finish</h3>
                     <div id="ranking-finish"></div>
                 </div>
@@ -271,13 +261,13 @@
         const TIME_FACTOR = 1;
 
         const runners = [
-            { name: "Julich Bosch", t0: 0.0, s1in: 335,s1result:5, s1time:356, s1out: 356, s2in: 553, s2result: 4, s2time: 580, s2out: 599, s3in: 796, s3result: 5, s3time: 815, s3out: 816, s4in: 1014, s4result: 5, s4time: 1033, s4out: 1034, finish: 1217, color: "#f90a84" },
-{ name: "Lorenzo Akitsuki", t0: 21.47051243012561, s1in: 353,s1result:5, s1time:374, s1out: 374, s2in: 567, s2result: 4, s2time: 591, s2out: 611, s3in: 806, s3result: 5, s3time: 826, s3out: 826, s4in: 1020, s4result: 5, s4time: 1042, s4out: 1043, finish: 1214, color: "#2920b6" },
-{ name: "El Pistolero", t0: 6.428777690551669, s1in: 353,s1result:5, s1time:373, s1out: 374, s2in: 581, s2result: 5, s2time: 607, s2out: 608, s3in: 816, s3result: 5, s3time: 838, s3out: 839, s4in: 1049, s4result: 5, s4time: 1067, s4out: 1067, finish: 1269, color: "#08e379" },
-{ name: "Stidpmi Martin", t0: 46.97704181344443, s1in: 387,s1result:5, s1time:408, s1out: 409, s2in: 610, s2result: 4, s2time: 637, s2out: 657, s3in: 859, s3result: 5, s3time: 881, s3out: 882, s4in: 1084, s4result: 4, s4time: 1109, s4out: 1131, finish: 1319, color: "#26d935" },
-{ name: "Jan Kallström", t0: 143.64990771700855, s1in: 481,s1result:5, s1time:507, s1out: 508, s2in: 705, s2result: 5, s2time: 725, s2out: 725, s3in: 923, s3result: 5, s3time: 941, s3out: 942, s4in: 1141, s4result: 4, s4time: 1163, s4out: 1185, finish: 1368, color: "#a198a3" },
-{ name: "Lars Elpino", t0: 63.45003419930413, s1in: 432,s1result:5, s1time:450, s1out: 450, s2in: 680, s2result: 5, s2time: 705, s2out: 705, s3in: 936, s3result: 3, s3time: 954, s3out: 997, s4in: 1227, s4result: 5, s4time: 1245, s4out: 1246, finish: 1481, color: "#be9254" },
-{ name: "Heikki Cadelmanen", t0: 92.63078297459515, s1in: 432,s1result:1, s1time:450, s1out: 528, s2in: 741, s2result: 4, s2time: 760, s2out: 780, s3in: 994, s3result: 5, s3time: 1012, s3out: 1012, s4in: 1227, s4result: 3, s4time: 1248, s4out: 1292, finish: 1496, color: "#1455fe" },
+            { name: "Stidpmi Martin", t0: 4.530499012974701, s1in: 202,s1result:5,s1pioche:0, s1time:223, s1out: 223, s2in: 421, s2result: 5, s2pioche: 1, s2time: 448, s2out: 449, s3in: 648, finish: 628, color: "#95f41e" },
+{ name: "El Pistolero", t0: 0.0, s1in: 202,s1result:5,s1pioche:1, s1time:233, s1out: 233, s2in: 439, s2result: 5, s2pioche: 0, s2time: 462, s2out: 463, s3in: 669, finish: 655, color: "#b21145" },
+{ name: "Lorenzo Akitsuki", t0: 31.279186997975557, s1in: 228,s1result:5,s1pioche:0, s1time:253, s1out: 253, s2in: 452, s2result: 5, s2pioche: 1, s2time: 486, s2out: 486, s3in: 685, finish: 665, color: "#4955ff" },
+{ name: "Julich Bosch", t0: 46.45349514839745, s1in: 242,s1result:5,s1pioche:0, s1time:262, s1out: 262, s2in: 461, s2result: 5, s2pioche: 0, s2time: 487, s2out: 487, s3in: 685, finish: 665, color: "#493b4d" },
+{ name: "Jan Kallström", t0: 65.10101722598995, s1in: 261,s1result:5,s1pioche:0, s1time:282, s1out: 282, s2in: 476, s2result: 5, s2pioche: 0, s2time: 500, s2out: 500, s3in: 700, finish: 680, color: "#9da454" },
+{ name: "Lars Elpino", t0: 32.36825567886217, s1in: 242,s1result:5,s1pioche:0, s1time:265, s1out: 265, s2in: 476, s2result: 5, s2pioche: 0, s2time: 500, s2out: 500, s3in: 711, finish: 701, color: "#40077b" },
+{ name: "Heikki Cadelmanen", t0: 35.42983582928059, s1in: 245,s1result:5,s1pioche:0, s1time:268, s1out: 268, s2in: 476, s2result: 5, s2pioche: 0, s2time: 501, s2out: 501, s3in: 711, finish: 699, color: "#aefb45" },
 
         ];
         initStartList()
@@ -290,20 +280,12 @@
             r.s2in *= TIME_FACTOR;
             r.s2time *= TIME_FACTOR;
             r.s2out *= TIME_FACTOR;
-            r.s3in *= TIME_FACTOR;
-            r.s3time *= TIME_FACTOR;
-            r.s3out *= TIME_FACTOR;
-            r.s4in *= TIME_FACTOR;
-            r.s4time *= TIME_FACTOR;
-            r.s4out *= TIME_FACTOR;
             r.state = "RUNNING";
         });
 
         runners.forEach(r => {
             r.s1Done = false;
             r.s2Done = false;
-            r.s3Done = false;
-            r.s4Done = false;
         });
 
         runners.forEach(r => {
@@ -422,43 +404,6 @@
                 if (r.s2Done && r.times.S2 && r.times.S2.out === null && localTime >= r.s2out) {
                     r.times.S2.out = localTime.toFixed(1);
                 }
-                // S3
-                if (!r.s3Done && localTime >= r.s3in) {
-                    shooting.push({
-                        runner: r,
-                        shots: 0,
-                        timer: 0,
-                        end: r.s3out,
-                        post: 0,
-                        label: "S3",
-                        targets: generateTargets(r.s3result)
-                    });
-                    r.s3Done = true;
-                    r.times.S3 = { in: localTime.toFixed(1), out: null };
-                }
-
-                if (r.s3Done && r.times.S3 && r.times.S3.out === null && localTime >= r.s3out) {
-                    r.times.S3.out = localTime.toFixed(1);
-                }
-
-                // S4
-                if (!r.s4Done && localTime >= r.s4in) {
-                    shooting.push({
-                        runner: r,
-                        shots: 0,
-                        timer: 0,
-                        end: r.s4out,
-                        post: 0,
-                        label: "S4",
-                        targets: generateTargets(r.s4result)
-                    });
-                    r.s4Done = true;
-                    r.times.S4 = { in: localTime.toFixed(1), out: null };
-                }
-
-                if (r.s4Done && r.times.S4 && r.times.S4.out === null && localTime >= r.s4out) {
-                    r.times.S4.out = localTime.toFixed(1);
-                }
             });
 
             // Mise Ã  jour des animations de tir
@@ -470,8 +415,6 @@
                 function getShootTimes(runner, label) {
                     if (label === "S1") return [runner.s1in, runner.s1time];
                     if (label === "S2") return [runner.s2in, runner.s2time];
-                    if (label === "S3") return [runner.s3in, runner.s3time];
-                    if (label === "S4") return [runner.s4in, runner.s4time];
                     return [0, 0];
                 }
 
@@ -550,28 +493,10 @@
                 else if (t < r.s2out)
                     angle = 2 * TWO_PI;
 
-                // Tour 3
-                else if (t < r.s3in)
-                    angle = 2 * TWO_PI +
-                        ((t - r.s2out) / (r.s3in - r.s2out)) * TWO_PI;
-
-                // Tir S3
-                else if (t < r.s3out)
-                    angle = 3 * TWO_PI;
-
-                // Tour 4
-                else if (t < r.s4in)
-                    angle = 3 * TWO_PI +
-                        ((t - r.s3out) / (r.s4in - r.s3out)) * TWO_PI;
-
-                // Tir S4
-                else if (t < r.s4out)
-                    angle = 4 * TWO_PI;
-
                 // Tour final
                 else if (t < r.finish)
-                    angle = 4 * TWO_PI +
-                        ((t - r.s4out) / (r.finish - r.s4out)) * TWO_PI;
+                    angle = 2 * TWO_PI +
+                        ((t - r.s2out) / (r.finish - r.s2out)) * TWO_PI;
 
                 else return;
 
@@ -638,40 +563,29 @@
                 "ranking-s1",
                 r => r.times.S1 && r.times.S1.out != null,
                 r => r.times.S1.out,
-                r => r.s1result
+                r => r.s1result,
+                r => r.s1pioche
             );
 
             updateRankingBlock(
                 "ranking-s2",
                 r => r.times.S2 && r.times.S2.out != null,
                 r => r.times.S2.out,
-                r => r.s2result
-            );
-
-            updateRankingBlock(
-                "ranking-s3",
-                r => r.times.S3 && r.times.S3.out != null,
-                r => r.times.S3.out,
-                r => r.s3result
-            );
-
-            updateRankingBlock(
-                "ranking-s4",
-                r => r.times.S4 && r.times.S4.out != null,
-                r => r.times.S4.out,
-                r => r.s4result
+                r => r.s2result,
+                r => r.s2pioche
             );
 
             updateRankingBlock(
                 "ranking-finish",
                 r => r.finish != null && raceTime >= r.finish,// + r.t0,
                 r => r.finish,
-                r => r.s4result + r.s3result + r.s2result + r.s1result
+                r => r.s2result + r.s1result,
+                r => r.s2pioche + r.s1pioche
             );
 
 
             // === FONCTION GÃ‰NÃ‰RIQUE ===
-            function updateRankingBlock(containerId, isEligible, getTime, getShootResult) {
+            function updateRankingBlock(containerId, isEligible, getTime, getShootResult, getPiocheNumber) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
 
@@ -698,7 +612,7 @@
 
                     let shootText = "";
                     if (typeof getShootResult === "function") {
-                        shootText = ` (${getShootResult(r)}/5)`;
+                        shootText = ` (${getShootResult(r)}/5 + ${getPiocheNumber(r)})`;
                     }
 
                     div.textContent = `${index + 1}. ${r.name}${gapText}${shootText}`;
